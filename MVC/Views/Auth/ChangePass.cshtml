@@ -1,0 +1,296 @@
+@model Repositories.Models.ChangePasswordVM
+@{
+    ViewData["Title"] = "Change Password";
+    Layout = "~/Views/Shared/_HomeLayout.cshtml";
+}
+
+<style>
+    :root {
+        --primary-color: #133E87;
+        --secondary-color: #608BC1;
+        --background-color: #F3F3E0;
+        --text-color: #333;
+    }
+
+    body {
+        background-color: var(--background-color);
+        font-family: 'Poppins', sans-serif;
+        color: var(--text-color);
+    }
+
+    .container {
+        max-width: 400px;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .card {
+        border: none;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+    }
+
+    .card-header {
+        background: var(--secondary-color);
+        color: white;
+        font-weight: bold;
+        text-align: center;
+        padding: 12px;
+        border-radius: 10px 10px 0 0;
+    }
+
+    .form-control {
+        border-radius: 8px;
+        padding: 10px;
+        border: 1px solid var(--primary-color);
+    }
+
+    .form-control:focus {
+        border-color: var(--secondary-color);
+        box-shadow: 0 0 5px var(--secondary-color);
+    }
+
+    .input-group {
+        position: relative;
+    }
+
+    .toggle-password {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        color: var(--primary-color);
+    }
+
+    .btn {
+        border-radius: 8px;
+        padding: 10px 15px;
+        font-weight: bold;
+    }
+
+    .btn-warning {
+        background: var(--primary-color);
+        border: none;
+        color: white;
+    }
+
+    .btn-warning:hover {
+        background: var(--secondary-color);
+    }
+
+    .btn-primary {
+        background: var(--primary-color);
+        border: none;
+    }
+
+    .btn-primary:hover {
+        background: var(--secondary-color);
+    }
+</style>
+
+    <div class="row">
+        <div class="col-md-12 m-auto">
+            <div class="card">
+                <div class="card-header">Change Password</div>
+                <div class="card-body">
+                    <form id="changePassForm" novalidate>
+                        <input type="hidden" name="userId" />
+
+                        <!-- Old Password -->
+                        <div class="mb-3">
+                            <label class="form-label">Old Password</label>
+                            <div class="input-group">
+                                <input class="form-control password-field" name="oldPassword" type="password" required />
+                                <span class="toggle-password" onclick="togglePassword(this)">👁</span>
+                            </div>
+                            <small id="msg-oldPassword" class="text-danger"></small>
+                        </div>
+
+                        <!-- New Password -->
+                        <div class="mb-3">
+                            <label class="form-label">New Password</label>
+                            <div class="input-group">
+                                <input class="form-control password-field" name="newPassword" type="password" required />
+                                <span class="toggle-password" onclick="togglePassword(this)">👁</span>
+                            </div>
+                            <small id="msg-newPassword" class="text-danger"></small>
+                        </div>
+
+                        <!-- Confirm New Password -->
+                        <div class="mb-3">
+                            <label class="form-label">Confirm New Password</label>
+                            <div class="input-group">
+                                <input class="form-control password-field" name="confirmPassword" type="password" required />
+                                <span class="toggle-password" onclick="togglePassword(this)">👁</span>
+                            </div>
+                            <small id="msg-confirmPassword" class="text-danger"></small>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" id="btnSubmit" class="btn btn-warning w-100">Change Password</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Back to Profile Button -->
+            <div class="mt-4 text-center">
+                <button class="btn btn-primary" id="btnProfile">Back to Profile</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+
+    <script>
+        const user = JSON.parse(sessionStorage.getItem("user"));
+        if (user == null) {
+            Swal.fire({
+                title: "Unauthorized access",
+                text: "Redirecting...",
+                icon: "error",
+                timer: 2000,
+                showConfirmButton: false
+            }).then(() => {
+                window.location.assign("/Auth/Login");
+            });
+        }
+        //
+
+        function handleFormSubmit() {
+            $("#btnSubmit").prop("disabled", true);
+
+            const formData = new FormData();
+            formData.append("UserId", user.userId);
+            formData.append("OldPassword", $('input[name="oldPassword"]').val());
+            formData.append("NewPassword", $('input[name="newPassword"]').val());
+            formData.append("ConfirmPassword", $('input[name="confirmPassword"]').val());
+
+            $.ajax({
+                url: 'http://localhost:5267/api/user/change-pass',
+                method: "PUT",
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response, status, xhr) {
+                    Swal.fire({
+                        title: "Password Changed!",
+                        icon: "success",
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                    $("#btnSubmit").prop("disabled", false);
+                },
+                error: function(xhr, status, error) {
+                    let errorMessage = "";
+                    
+                    if (xhr.responseJSON.errors) {
+                        // Handle validation errors
+                        errorMessage = Object.values(xhr.responseJSON.errors)
+                            .flat()
+                            .join('\n');
+                    } else if (xhr.responseJSON.message) {
+                        // Handle direct message errors
+                        errorMessage = xhr.responseJSON.message;
+                    } else {
+                        // Fallback error message
+                        errorMessage = "An error occurred while changing password";
+                    }
+
+                    Swal.fire({
+                        title: "Failure!",
+                        text: errorMessage,
+                        icon: "error",
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                    $("#btnSubmit").prop("disabled", false);
+                }
+            });
+        }
+
+        function togglePassword(element) {
+            let input = element.previousElementSibling;
+            if (input.type === "password") {
+                input.type = "text";
+                element.textContent = "🙈";
+            } else {
+                input.type = "password";
+                element.textContent = "👁";
+            }
+        }
+        
+        //
+
+        $(document).ready(function() {
+            $("input[name='userId']").val(user.userId);
+
+            // Form validation rules
+            $('#changePassForm').validate({
+                rules: {
+                    oldPassword: {
+                        required: true
+                    },
+                    newPassword: {
+                        required: true,
+                        minlength: 6
+                    },
+                    confirmPassword: {
+                        required: true,
+                        minlength: 6,
+                        equalTo: "input[name='newPassword']"
+                    }
+                },
+                messages: {
+                    oldPassword: {
+                        required: "Please enter your current password"
+                    },
+                    newPassword: {
+                        required: "Please enter your new password",
+                        minlength: "Password must have at least 6 characters"
+                    },
+                    confirmPassword: {
+                        required: "Please confirm your password",
+                        minlength: "Password must have at least 6 characters"
+                    },
+                },
+                errorPlacement: function(error, element) {
+                    const msgId = "#msg-" + $(element).attr("name");
+                    $(msgId).removeClass('text-success').addClass('text-danger').text(error.text());
+                },
+                highlight: function(element) {
+                    // error
+                    $(element).removeClass('is-valid').addClass('is-invalid');
+                },
+                unhighlight: function(element) {
+                    // success
+                    $(element).removeClass('is-invalid').addClass('is-valid');
+                    const msgId = "#msg-" + $(element).attr("name");
+                    $(msgId).removeClass('text-danger').addClass('text-success').text("Looks good!");
+                },
+                submitHandler: function (form, event) {
+                    event.preventDefault();
+                    handleFormSubmit();
+                }
+            });
+
+            $('$btnProfile').on('click', function() {
+                switch (user.role) {
+                    case "A":
+                        window.location.assign("/Admin/Profile");
+                        break;
+                    case "E":
+                        window.location.assign("/Employee/Profile");
+                        break;
+                    default:
+                        console.log("Unauthorized user");
+                        break;
+                }
+            });
+        });
+    </script>
+}

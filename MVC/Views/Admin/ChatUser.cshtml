@@ -1,0 +1,373 @@
+@{
+    ViewData["Title"] = "Chat with User";
+}
+
+@{
+    ViewData["Title"] = "Chat";
+}
+
+<style>
+    :root {
+        --primary-color: #133E87;
+        --secondary-color: #608BC1;
+        --background-color: #F3F3E0;
+        --text-color: #333;
+    }
+
+    body {
+        background-color: var(--background-color);
+        font-family: 'Poppins', sans-serif;
+        color: var(--text-color);
+    }
+
+    .chat-container {
+        max-width: 1350px;
+        margin: auto;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Chat Header */
+    .chat-header {
+        background: var(--primary-color);
+        color: white;
+        padding: 15px;
+        border-radius: 10px 10px 0 0;
+        display: flex;
+        align-items: center;
+    }
+
+    .profile-pic {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid white;
+        margin-right: 12px;
+    }
+
+    .chat-user {
+        flex-grow: 1;
+    }
+
+    .online-status {
+        font-size: 0.85rem;
+        color: var(--secondary-color);
+    }
+
+    /* Chat Messages */
+    #chat-box {
+        height: 60vh;
+        overflow-y: auto;
+        padding: 15px;
+        background-color: #2c2c2c;
+        background-size: contain;
+        border-radius: 0 0 10px 10px;
+        scrollbar-width: thin;
+    }
+
+    /* Chat Input */
+    .chat-footer {
+        background: white;
+        padding: 12px;
+        border-top: 1px solid #ddd;
+        display: flex;
+        align-items: center;
+        border-radius: 0 0 10px 10px;
+    }
+
+    .chat-footer .form-control {
+        border-radius: 20px;
+        border: none;
+        padding: 10px 15px;
+        font-size: 1rem;
+    }
+
+    .chat-footer .btn {
+        background: var(--primary-color);
+        border: none;
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+
+    .chat-footer .btn:hover {
+        background: var(--secondary-color);
+    }
+
+    .chat-footer .input-group-text {
+        background: none;
+        border: none;
+        color: var(--primary-color);
+        font-size: 1.2rem;
+    }
+</style>
+
+<div class="container-fluid h-100 py-3">
+    <div class="row h-100">
+        <div class="col-12 col-md-8 mx-auto">
+            <!-- Chat Card -->
+            <div class="card shadow">
+                <!-- Chat Header -->
+                <div class="chat-header">
+                    <img id="receiverImage" src="" alt="receiver profile" class="profile-pic"
+                         onerror="this.src='/profile_images/placeholder.jpg'" />
+                    <div class="chat-user">
+                        <h5 class="mb-0" id="receiverName">User Name</h5>
+                        <small id="onlineStatus" class="online-status">Online</small>
+                    </div>
+                </div>
+
+                <!-- Chat Messages -->
+                <div id="chat-box">
+                    <!-- Messages will load here -->
+                </div>
+
+                <!-- Message Input -->
+                <div class="chat-footer">
+                    <form id="chatForm" class="mb-0 w-100">
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fa-solid fa-face-smile"></i>
+                            </span>
+                            <input type="text" id="message" class="form-control" placeholder="Type a message..." autocomplete="off">
+                            <span class="input-group-text">
+                                <i class="fa-solid fa-paperclip"></i>
+                            </span>
+                            <button type="submit" class="btn">
+                                <i class="fa-solid fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div> 
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.0/signalr.min.js"></script>
+<script>
+    const receiverId = window.location.href.split("/").pop();
+    console.log("receiverId in url:", receiverId);
+    let receiver = null;
+    let connection;
+    const user = JSON.parse(sessionStorage.getItem("user"));
+    const baseUrl = "http://localhost:5267/api";
+    //
+    //
+    function getFormData() {
+        const formData = new FormData();
+        formData.append("Message", $("#message").val());
+        formData.append("SenderId", user.userId);
+        formData.append("ReceiverId", receiverId);
+
+        return formData;
+    }
+    //
+    function loadReceiverData() {
+        return new Promise(function(resolve, reject) {
+            $.ajax({
+                url: `${baseUrl}/user/${receiverId}`,
+                method: "GET",
+                success: function (response, status, xhr) {
+                    receiver = response.data;
+                    $('#receiverName').text(receiver.firstName + " " + receiver.lastName);
+                    $('#receiverImage').attr('src', `/profile_images/${receiver.image}`);
+                    $('#onlineStatus').html(receiver?.isOnline == true ? `<i class="fa-solid fa-circle-check me-1"></i>Online` : `<i class="fa-solid fa-circle-xmark me-1"></i>Offline`);
+                    //
+                    resolve();
+                },
+                error: function (xhr, status, error) {
+                    console.error("loadReceiverData():\n", xhr.responseJSON);
+                    reject();
+                }
+            });
+        });
+    }
+    //
+    // Update the message append template in loadChatHistory and ReceiveMessage functions
+    function appendMessage(chat, senderName) {
+        let alignClass = (chat.senderId == user.userId) ? "justify-content-end" : "justify-content-start";
+        let bubbleClass = (chat.senderId == user.userId) ? "bg-primary text-white" : "bg-white";
+        let timestamp = new Date(chat.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        let messageStatus = chat.status || 'sent';
+        let statusIcon = getStatusIcon(messageStatus);
+
+        $("#chat-box").append(`
+            <div class="d-flex ${alignClass} mb-3" data-message-id="${chat.chatId}">
+                <div class="d-flex flex-column ${bubbleClass} shadow-sm rounded-3 p-3" style="max-width: 75%;">
+                    <div class="message-text">${chat.message}</div>
+                    <small class="text-${chat.senderId == user.userId ? 'white-50' : 'muted'} align-self-end mt-1">
+                        ${timestamp}
+                        ${statusIcon}
+                    </small>
+                </div>
+            </div>
+        `);
+    }
+
+    function getStatusIcon(status) {
+        switch(status) {
+            case 'sent':
+                return '<i class="fa-solid fa-check"></i>';
+            case 'delivered':
+                return '<i class="fa-solid fa-check-double"></i>';
+            case 'read':
+                return '<i class="fa-solid fa-check-double text-primary"></i>';
+            default:
+                return '<i class="fa-solid fa-clock"></i>';
+        }
+    }
+    //
+    // Update loadChatHistory function to use the new appendMessage
+    function loadChatHistory() {
+        $.ajax({
+            url: `${baseUrl}/chat/history/${user.userId}/${receiver.userId}`,
+            method: "GET",
+            success: function (response) {
+                $("#message").val("");
+                console.log("Chat History Loaded:", response);
+                const chatArray = response.data;
+                $("#chat-box").html("");
+
+                chatArray.forEach(chat => {
+                    appendMessage(chat, chat.senderId == user.userId ? 'You' : `${receiver.firstName} ${receiver.lastName}`);
+                });
+
+                $("#chat-box").scrollTop($("#chat-box")[0].scrollHeight);
+            },
+            error: function (xhr) {
+                console.error("Error Loading Chat History:", xhr.responseJSON);
+            }
+        });
+    }
+    //
+    function startSignalRConnection() {
+        // Ensure we don't have an existing connection
+        if (connection) {
+            connection.stop();
+        }
+    
+        connection = new signalR.HubConnectionBuilder()
+            .withUrl(`http://localhost:5267/chatHub?userId=${user.userId}`, {
+                skipNegotiation: true,
+                transport: signalR.HttpTransportType.WebSockets,
+                withCredentials: false
+            })
+            .withAutomaticReconnect([0, 2000, 5000, 10000, 20000])
+            .configureLogging(signalR.LogLevel.Information)
+            .build();
+        
+        // Remove any existing handlers before adding new ones
+        connection.off("ReceiveMessage");
+        connection.off("UserOnline");
+        connection.off("UserOffline");
+        connection.off("MessageStatus");
+        
+        connection.on("ReceiveMessage", function (chat) {
+        console.log("Received message:", chat);
+        appendMessage(chat, chat.senderId === user.userId ? 'You' : receiver.firstName);
+        $("#chat-box").scrollTop($("#chat-box")[0].scrollHeight);
+        
+        // Acknowledge message receipt
+        if (chat.senderId !== user.userId) {
+            connection.invoke("AcknowledgeMessage", chat.chatId, chat.senderId)
+                .catch(err => console.error("Error acknowledging message:", err));
+        }
+    });
+
+    // Add online/offline status handlers
+    connection.on("UserOnline", function(userId) {
+        if(userId === receiver.userId) {
+            $('#onlineStatus').html(`<i class="fa-solid fa-circle-check me-1"></i>Online`);
+        }
+    });
+
+    connection.on("UserOffline", function(userId) {
+        if(userId === receiver.userId) {
+            $('#onlineStatus').html(`<i class="fa-solid fa-circle-xmark me-1"></i>Offline`);
+        }
+    });
+
+    connection.on("MessageStatus", function (messageId, status) {
+        const messageElement = $(`[data-message-id="${messageId}"]`);
+        if (messageElement.length) {
+            messageElement.find('i').replaceWith(getStatusIcon(status));
+        }
+    });
+
+    // Start the connection
+    connection.start()
+        .then(() => {
+            console.log("Connected to SignalR!");
+            $("#chatForm").removeClass("disabled");
+        })
+        .catch(err => {
+            console.error("SignalR Connection Error:", err);
+            setTimeout(startSignalRConnection, 5000);
+        });
+    }
+
+    function sendMessage() {
+        let message = $("#message").val();
+
+        if (!message.trim()) return;
+
+        let formData = getFormData();
+
+        // Send message via AJAX (store in DB)
+        $.ajax({
+        url: `${baseUrl}/chat`,
+        method: "POST",
+        data: formData,
+        contentType: false,
+        processData: false,
+        success: function (response) {
+            console.log("Message Sent:", response);
+            const chatObject = response.data; // Use the response data directly
+            
+            // Append message to UI
+            appendMessage(chatObject, 'You');
+            $("#chat-box").scrollTop($("#chat-box")[0].scrollHeight);
+
+            // Send message to receiver via SignalR
+            if (connection && connection.state === "Connected") {
+                connection.invoke("SendMessageToUser", receiver.userId, chatObject)
+                    .catch(err => {
+                        console.error("SignalR Error:", err);
+                    });
+            }
+        },
+        error: function (xhr) {
+            console.error("Error Sending Message:", xhr.responseJSON);
+        }
+    });
+
+        // Clear input field after sending
+        $("#message").val("");
+    }
+    // DOCUMENT READY FUNCTION
+
+    $(document).ready(function () {
+        loadReceiverData()
+        .then(() => {
+            loadChatHistory();
+            // Call the new connection setup function
+            startSignalRConnection();
+        });
+
+        $("#chatForm").on("submit", function (e) {
+            e.preventDefault();
+            sendMessage();
+        });
+    });
+</script>
+}

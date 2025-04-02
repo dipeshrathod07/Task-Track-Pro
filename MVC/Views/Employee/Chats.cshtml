@@ -1,0 +1,128 @@
+@{
+    ViewData["Title"] = "Chats";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    :root {
+        --primary-color: #133E87;
+        --secondary-color: #608BC1;
+        --accent-color: #CBDCEB;
+        --background-color: #F3F3E0;
+        --text-color: #333;
+    }
+
+    body {
+        background-color: var(--background-color);
+        color: var(--text-color);
+    }
+
+    .chat-container {
+        max-width: 1350px;
+        margin: auto;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .chat-header {
+        text-align: center;
+        color: var(--primary-color);
+        font-weight: bold;
+        margin-bottom: 20px;
+    }
+
+    .list-group-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 10px;
+        background: var(--accent-color);
+        border: none;
+        padding: 15px;
+        border-radius: 8px;
+        transition: background 0.3s ease-in-out;
+    }
+
+    .list-group-item:hover {
+        background: var(--secondary-color);
+        color: white;
+    }
+
+    .user-img {
+        height: 40px;
+        width: 40px;
+        border-radius: 50%;
+        margin-right: 10px;
+        border: 2px solid var(--primary-color);
+    }
+
+    .user-name {
+        flex: 1;
+        font-size: 1rem;
+        font-weight: bold;
+        color: var(--primary-color);
+    }
+
+    .user-name a {
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .badge {
+        background: var(--primary-color);
+        color: white;
+        padding: 5px 10px;
+        border-radius: 12px;
+        font-size: 0.85rem;
+    }
+</style>
+
+<div class="row mt-4">
+    <div class="col-10 m-auto">
+        <div class="chat-container">
+            <h2 class="chat-header">All Chats</h2>
+            <ul class="list-group" id="userList"></ul>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const user = JSON.parse(sessionStorage.getItem("user"));
+        const baseUrl = "http://localhost:5267/api";
+
+        function loadUsers() {
+            $.ajax({
+                url: `${baseUrl}/user`,
+                method: "GET",
+                success: function(response, status, xhr) {                    
+                    $.each(response.data, function(index, data) {
+                        $("#userList").append(`
+                        <li class="list-group-item">
+                                <a href="ChatUser/${data.userId}" class="d-flex align-items-center text-decoration-none">
+                                    <img class="user-img" src="/profile_images/${data.image}" 
+                                        onerror="this.src='/profile_images/placeholder.jpg'" />
+                                    <span class="user-name">
+                                        ${user.userId == data.userId ? data.firstName + " " + data.lastName + " (You)" : data.firstName + " " + data.lastName}
+                                    </span>
+                                </a>
+                                <span class="badge">New: 0</span>
+                            </li>
+                        `);
+                    });
+                },
+                error: function(xhr, status, error) {
+                    console.log(xhr.responseJSON);
+                }
+            });
+        }
+
+        //
+
+        $(document).ready(function() {
+            loadUsers();
+        });
+    </script>
+}

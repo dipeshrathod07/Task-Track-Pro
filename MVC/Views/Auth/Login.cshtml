@@ -1,0 +1,242 @@
+@{
+    ViewData["Title"] = "Login";
+    Layout = "~/Views/Shared/_HomeLayout.cshtml";
+}
+
+@section Styles {
+<style>
+    :root {
+        --primary-color: #133E87;
+        --secondary-color: #608BC1;
+        --accent-color: #CBDCEB;
+        --background-color: #F3F3E0;
+        --text-color: #333;
+    }
+
+    body {
+        background-color: var(--background-color);
+        font-family: 'Poppins', sans-serif;
+        color: var(--text-color);
+    }
+
+    .navbar {
+        background-color: var(--primary-color);
+        padding: 15px;
+    }
+
+    .navbar-brand,
+    .nav-link {
+        color: black !important;
+        font-weight: 600;
+    }
+
+    .container {
+        max-width: 1200px;
+        padding: 50px 30px;
+    }
+
+    .card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        padding: 40px;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 50px;
+    }
+
+    h2 {
+        font-size: 2.2rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+        color: var(--primary-color);
+    }
+
+    .form-group label {
+        font-weight: 500;
+        color: var(--text-color);
+    }
+
+    .form-control {
+        padding: 14px;
+        font-size: 1rem;
+        border-radius: 8px;
+        border: 1px solid var(--accent-color);
+    }
+
+    .btn-primary {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        padding: 14px;
+        font-size: 1rem;
+        width: 100%;
+        border-radius: 8px;
+        font-weight: bold;
+    }
+
+    .btn-primary:hover {
+        background-color: var(--secondary-color);
+        border-color: var(--secondary-color);
+    }
+
+    .btn-info {
+        background-color: var(--secondary-color);
+        border-color: var(--secondary-color);
+        padding: 12px 24px;
+        font-size: 1rem;
+        border-radius: 8px;
+        font-weight: bold;
+        color: white;
+        text-decoration: none;
+    }
+
+    .btn-info:hover {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+
+    .img-fluid {
+        max-width: 100%;
+        height: auto;
+        border-radius: 12px;
+    }
+
+    .text-center p {
+        margin-bottom: 10px;
+        font-size: 1.1rem;
+    }
+</style>
+}
+
+<div class="mb-2">
+    <div id="responseMessage" class="alert-dismissible fade show" role="alert"></div>
+</div>
+
+<div class="row align-items-center g-5">
+    <div class="col-md-30">
+        <div class="card">
+            <div class="card-body">
+                <h2 style="text-align: center">Login</h2>
+                <form id="loginForm" novalidate>
+                    <div class="form-group mt-3">   
+                        <label for="email">Email:</label>
+                        <input type="email" class="form-control" id="email" name="email"
+                            placeholder="Enter Email" required />
+                        <small id="msg-email" class="text-danger"></small>
+                    </div>
+                    <div class="form-group mt-3">
+                        <label for="password">Password:</label>
+                        <input type="password" class="form-control" id="password" name="password"
+                            placeholder="Enter Password" required />
+                        <small id="msg-password" class="text-danger"></small>
+                    </div>
+                    <button type="submit" id="btnSubmit" class="btn btn-primary mt-4">Login</button>
+                </form>
+                <div class="signup-text" style="text-align: center; padding: 20px;">
+                    <p>Don't have an account? <a href="@Url.Action("Register", "Auth")" style="color: var(--primary-color);">Signup here</a></p>
+                </div>
+            </div>
+            <div class="col-md-6 text-center">
+                <img src="~/images/Logini1.png" alt="Login Illustration" class="img-fluid">
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+
+    <script>
+        function handleFormSubmit() {
+            const formData = $('#loginForm').serialize(); // Serialize form data
+            $('#btnSubmit').attr('disabled', true).text("Authenticating...");
+
+            $.ajax({
+                url: 'http://localhost:5267/api/user/auth',
+                type: 'POST',
+                data: formData,
+                contentType: 'application/x-www-form-urlencoded',
+                success: function (response) {
+                    localStorage.setItem("token", response.token);
+                    sessionStorage.setItem("user", JSON.stringify(response.data));
+                    $('#btnSubmit').attr('disabled', false).text("Login");
+
+                    Swal.fire({
+                        title: "Login Successful!",
+                        text: "Redirecting to your dashboard...",
+                        icon: "success",
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        switch (response.data.role) {
+                            case "A":
+                                window.location.href = "/Admin/Index";
+                                break;
+                            case "E":
+                                window.location.href = "/Employee/Index";
+                                break;
+                            default:
+                                window.location.href = "/Home/Index";
+                        }
+                    });
+                },
+                error: function (xhr, status, error) {
+                    $('#btnSubmit').attr('disabled', false).text("Login");
+
+                    const message = xhr.responseJSON?.message || "Login failed. Please try again.";
+                    Swal.fire({
+                        title: "Login Failed",
+                        text: message,
+                        icon: "error",
+                        confirmButtonColor: "#133E87"
+                    });
+                }
+            });
+        }
+
+        $(document).ready(function () {
+           // Form validation rules
+            $('#loginForm').validate({
+                rules: {
+                    email: {
+                        required: true,
+                        email: true
+                    },
+                    password: {
+                        required: true,
+                        minlength: 6
+                    }
+                },
+                messages: {
+                    email: {
+                        required: "Please enter your email",
+                        email: "Please enter a valid email address"
+                    },
+                    password: {
+                        required: "Please enter a password",
+                        minlength: "Password must be at least 6 characters"
+                    }
+                },
+                errorPlacement: function(error, element) {
+                    const msgId = "#msg-" + $(element).attr("name");
+                    $(msgId).removeClass('text-success').addClass('text-danger').text(error.text());
+                },
+                highlight: function(element) {
+                    // error
+                    $(element).removeClass('is-valid').addClass('is-invalid');
+                },
+                unhighlight: function(element) {
+                    // success
+                    $(element).removeClass('is-invalid').addClass('is-valid');
+                    const msgId = "#msg-" + $(element).attr("name");
+                    $(msgId).removeClass('text-danger').addClass('text-success').text("Looks good!");
+                },
+                submitHandler: function (form, event) {
+                    event.preventDefault();
+                    handleFormSubmit();
+                }
+            });
+        });
+    </script>
+}

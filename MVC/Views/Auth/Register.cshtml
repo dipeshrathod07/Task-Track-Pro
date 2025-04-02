@@ -1,0 +1,312 @@
+@{
+    ViewData["Title"] = "Register";
+    Layout = "~/Views/Shared/_HomeLayout.cshtml";
+}
+
+@section Styles {
+    <style>
+        :root {
+            --primary-color: #133E87;
+            --secondary-color: #608BC1;
+            --accent-color: #CBDCEB;
+            --background-color: #F3F3E0;
+            --text-color: #333;
+        }
+
+        body {
+            background-color: var(--background-color);
+            font-family: 'Poppins', sans-serif;
+            color: var(--text-color);
+        }
+
+        .navbar {
+            background-color: var(--primary-color);
+            padding: 15px;
+        }
+
+        .navbar-brand,
+        .nav-link {
+            color: black !important;
+            font-weight: 600;
+        }
+
+        .container {
+            max-width: 1200px;
+            /* Increased container size */
+            padding: 50px 30px;
+        }
+
+
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 20px;
+        }
+
+        h2 {
+            font-size: 2.2rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+
+        }
+
+        .form-group label {
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        .form-control {
+            padding: 8px;
+            font-size: 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--accent-color);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            padding: 8px;
+            font-size: 1rem;
+            width: 100%;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+
+        .btn-info {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+            padding: 12px 24px;
+            font-size: 1rem;
+            border-radius: 8px;
+            font-weight: bold;
+            color: white;
+            text-decoration: none;
+        }
+
+        .btn-info:hover {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .img-fluid {
+            max-width: 100%;
+            height: auto;
+            border-radius: 12px;
+        }
+
+        .text-center p {
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+    </style>
+}
+
+<div class="row align-items-center">
+    <div class="col-md-30" style="margin-top: 40px;">
+        <div class="card" style="display: flex; flex-direction: row; justify-content: space-between; align-items: center; gap: 40px;">
+            <div class="col-md-6 text-center">
+            <img src="~/images/Logini1.png" alt="Login Illustration" class="img-fluid">
+            </div>
+            <div class="card-body">
+                <h2 style="text-align: center">Register</h2>
+                <form id="registerForm" novalidate>
+                    <div class="form-group mt-3">
+                        <label class="mb-1" for="firstName">Full Name:</label>
+                        <div class="input-group">
+                            <input type="text" id="firstName" name="firstName" class="form-control" placeholder="First name"  required>
+                            <input type="text" id="lastName" name="lastName" class="form-control" placeholder="Last name" required>
+                        </div>
+                        <span class="row">
+                            <small id="msg-firstName" class="col-6 text-danger"></small>
+                            <small id="msg-lastName" class="col-6 text-danger"></small>
+                        </span>
+                    </div>
+                    <div class="form-group mt-3">
+                        <label class="mb-1">Gender:</label>
+                        <div class="input-group">
+                            <div class="input-group-text">
+                                <input name="gender" id="male" class="form-check-input mt-0" type="radio" value="M" aria-label="Male">
+                            </div>
+                            <label class="form-control" for="male">Male</label>
+                            <!-- -->
+                            <div class="input-group-text">
+                                <input name="gender" id="female" class="form-check-input mt-0" type="radio" value="F" aria-label="Female">
+                            </div>
+                            <label class="form-control" for="female">Female</label>
+                        </div>
+                        <small id="msg-group" class="text-danger"></small>
+                    </div>
+                    <div class="form-group mt-3">
+                        <label class="mb-2" for="Email">Email:</label>
+                        <input type="text" class="form-control" id="email" name="email" placeholder="Enter Email" />
+                        <small id="msg-email" class="text-danger"></small>
+                    </div>
+                    <div class="form-group mt-3">
+                        <label class="mb-1" for="Password">Password:</label>
+                        <input type="password" class="form-control" id="password" name="password" placeholder="Enter Password" />
+                        <small id="msg-password" class="text-danger"></small>
+                    </div>
+                            <div class="form-group mt-3">
+                        <label class="mb-1" for="confirmPassword">Confirm Password:</label>
+                        <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" placeholder="Confirm Password" />
+                        <small id="msg-confirmPassword" class="text-danger"></small>
+                    </div>                      
+                    <div class="form-group mt-3">
+                        <label class="mb-1" for="ImageFile">Profile Image:</label>
+                        <input type="file" class="form-control" id="imageFile" accept="image/*" />
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-4">Register</button>
+                </form>  
+                <div class="signup-text " style="text-align: center; padding: 20px;">
+                    <p>Have an account? <a href="@Url.Action("Login", "Auth")" style="color: var(--primary-color);">Login here</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+
+    <script>
+        function getFormData() {
+            const formData = new FormData();
+            formData.append("Role", "E");
+            formData.append("FirstName", $('#firstName').val().trim());
+            formData.append("LastName", $('#lastName').val().trim());
+            formData.append("Email", $('#email').val().trim());
+            formData.append("Password", $('#password').val());
+            formData.append("Gender", $('input[name="gender"]:checked').val());
+
+            const imageFile = $('#imageFile')[0].files[0];
+            if (imageFile) {
+                formData.append("ImageFile", imageFile);
+            }
+
+            return formData;
+        }
+
+        function handleFormSubmit() {
+            const formData = getFormData();
+            $.ajax({
+                url: 'http://localhost:5267/api/user/',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    const fullName = `${$('#firstName').val().trim()} ${$('#lastName').val().trim()}`;
+                    
+                    sendAdminNotification(
+                        "New User Registration",
+                        `${fullName} has registered as an employee.`
+                    ).finally(() => {
+                        // Show success message and redirect regardless of notification status
+                        Swal.fire({
+                            title: "Registration Successful!",
+                            text: "Please login to continue",
+                            icon: "success",
+                            confirmButtonColor: "#133E87"
+                        }).then(() => {
+                            window.location.href = "/Auth/Login";
+                        });
+                    });
+                },
+                error: function(xhr) {
+                    const message = xhr.responseJSON?.message || "Registration failed. Please try again.";
+                    Swal.fire({
+                        title: "Registration Failed",
+                        text: message,
+                        icon: "error",
+                        confirmButtonColor: "#133E87"
+                    });
+                }
+            });
+        }
+
+        $(document).ready(function() {
+            // Form validation rules
+            $('#registerForm').validate({
+                rules: {
+                    firstName: {
+                        required: true,
+                        minlength: 2
+                    },
+                    lastName: {
+                        required: true,
+                        minlength: 2
+                    },
+                    email: {
+                        required: true,
+                        email: true
+                    },
+                    password: {
+                        required: true,
+                        minlength: 6
+                    },
+                    confirmPassword: {
+                        required: true,
+                        equalTo: "#password"
+                    },
+                    gender: {
+                        required: true
+                    }
+                },
+                messages: {
+                    firstName: {
+                        required: "Please enter your first name",
+                        minlength: "First name must be at least 2 characters"
+                    },
+                    lastName: {
+                        required: "Please enter your last name",
+                        minlength: "Last name must be at least 2 characters"
+                    },
+                    email: {
+                        required: "Please enter your email",
+                        email: "Please enter a valid email address"
+                    },
+                    password: {
+                        required: "Please enter a password",
+                        minlength: "Password must be at least 6 characters"
+                    },
+                    confirmPassword: {
+                        required: "Please confirm your password",
+                        equalTo: "Passwords do not match"
+                    },
+                    gender: {
+                        required: "Please select your gender"
+                    }
+                },
+                errorPlacement: function(error, element) {
+                    const msgId = "#msg-" + $(element).attr("name");
+                    $(msgId).removeClass('text-success').addClass('text-danger').text(error.text());
+                },
+                highlight: function(element) {
+                    // error
+                    $(element).removeClass('is-valid').addClass('is-invalid');
+                },
+                unhighlight: function(element) {
+                    // success
+                    $(element).removeClass('is-invalid').addClass('is-valid');
+                    const msgId = "#msg-" + $(element).attr("name");
+                    $(msgId).removeClass('text-danger').addClass('text-success').text("Looks good!");
+                },
+                submitHandler: function (form, event) {
+                    event.preventDefault();
+                    handleFormSubmit();
+                }
+            });
+        });
+    </script>
+}

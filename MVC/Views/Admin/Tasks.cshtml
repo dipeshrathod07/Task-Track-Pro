@@ -1,0 +1,696 @@
+@{
+    ViewData["Title"] = "Tasks";
+}
+
+<style>
+    :root {
+        --primary-color: #133E87;
+        --secondary-color: #608BC1;
+        --background-color: #F3F3E0;
+        --text-color: #333;
+    }
+
+    body {
+        background-color: var(--background-color);
+        font-family: 'Poppins', sans-serif;
+        color: var(--text-color);
+    }
+
+    .container {
+        max-width: 1350px;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Header */
+    .card-header {
+        background: var(--secondary-color);
+        color: white;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+    }
+
+    /* Buttons */
+    .btn-primary {
+        background: var(--primary-color);
+        border: none;
+    }
+
+    .btn-primary:hover {
+        background: var(--secondary-color);
+    }
+
+    .btn-secondary {
+        background: var(--primary-color);
+        border: none;
+    }
+
+    /* Search & Add Task */
+    #btnAdd {
+        font-weight: bold;
+    }
+
+    .search-input {
+        border-radius: 20px;
+        padding: 8px 15px;
+        border: 1px solid var(--primary-color);
+    }
+
+    /* Task Tree View */
+    #taskTreeView {
+        padding: 15px;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    /* Modal */
+    .modal-content {
+        border-radius: 10px;
+    }
+
+    .modal-header {
+        background: var(--primary-color);
+        color: white;
+        border-radius: 10px 10px 0 0;
+    }
+
+    .modal-footer {
+        background: var(--background-color);
+        border-radius: 0 0 10px 10px;
+    }
+</style>
+
+
+    
+    <div class="row mb-3 justify-content-between">
+        <div class="col-8">
+            <button id="btnAdd" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i> Add Task
+            </button>
+        </div>
+        <div class="col-4">
+            <form id="searchForm" class="d-flex">
+                <input type="search" id="txtSearch" class="form-control search-input me-2" placeholder="Search tasks..." required />
+                <button type="submit" id="btnSearch" class="btn btn-secondary">
+                    <i class="fas fa-search"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Task Tree View -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Tasks by Employee</h5>
+        </div>
+        <div class="card-body p-0">
+            <div id="taskTreeView" class="accordion">
+                <!-- Will be populated dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Task Modal -->
+    <div class="modal fade" id="taskModal" tabindex="-1" aria-labelledby="taskModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="taskModalLabel">Add New Task</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                
+                <div class="modal-body">
+                    <form id="taskForm" class="needs-validation" novalidate>
+                        <div class="mb-3">
+                            <label for="userId" class="form-label">Assign To</label>
+                            <select class="form-select" id="userId" required>
+                                <option value="">Select Employee</option>
+                            </select>
+                            <div class="invalid-feedback">
+                                Please select an employee
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Title</label>
+                            <input type="text" class="form-control" id="title" required>
+                            <div class="invalid-feedback">
+                                Please enter a title
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="estimatedDays" class="form-label">Estimated Days</label>
+                            <input type="number" class="form-control" id="estimatedDays" min="1">
+                            <div class="invalid-feedback">
+                                Please enter a valid number of days
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="startDate" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="startDate" required>
+                            <div class="invalid-feedback">
+                                Please select a start date
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="endDate" class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="endDate">
+                        </div>
+                        <div class="mb-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" required>
+                                <option value="">Select Status</option>
+                                <option value="Pending">Pending</option>
+                                <option value="In Progress">In Progress</option>
+                                <option value="Completed">Completed</option>
+                                <option value="Cancelled">Cancelled</option>
+                            </select>
+                            <div class="invalid-feedback">
+                                Please select a status
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="btnSaveTask">Save Task</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        const baseUrl = "http://localhost:5267/api";
+        let user=JSON.parse(sessionStorage.getItem("user"));
+
+        // ========
+
+        // function to load employees
+        function loadEmployees() {
+            $.ajax({
+                url: `${userUrl}/user`,
+                type: 'GET',
+                dataType: 'json',
+                success: function(response) {
+                if (response && (response.data || response.value)) {
+                        const userData = response.data || response.value;
+                        $('#userId').empty().append('<option value="">Select Employee</option>');
+                        $.each(userData, function(index, user) {
+                            $('#userId').append(`
+                                <option value="${user.userId}">${user.firstName} ${user.lastName}</option>
+                            `);
+                        });
+                    } else {
+                        $('#alert').removeClass().addClass('alert alert-warning')
+                            .text('Error: Invalid employee data format received');
+                    }
+                },
+                error: function(error) {
+                    console.error('Error loading employees:', error);
+                    $('#alert').removeClass().addClass('alert alert-danger')
+                        .text('Error loading employees: ' + error.statusText);
+                }
+            });
+        }
+
+        // function to load tasks
+        function loadTaskData() {
+            $.ajax({
+                url: `${baseUrl}/task`,
+                type: 'GET',
+                dataType: 'json',
+                success: function (response) {
+                    $('#taskTreeView').empty();
+                    
+                    if (response.data.length > 0) {
+                        // Group tasks by user
+                        const tasksByUser = {};
+                        response.data.forEach(task => {
+                            if (!tasksByUser[task.user.userId]) {
+                                tasksByUser[task.user.userId] = {
+                                    user: task.user,
+                                    tasks: []
+                                };
+                            }
+                            tasksByUser[task.user.userId].tasks.push(task);
+                        });
+
+                        // Render grouped tasks
+                        Object.values(tasksByUser).forEach((group, index) => {
+                            const user = group.user;
+                            const tasks = group.tasks;
+                            const accordionId = `accordion-${user.userId}`;
+                            
+                            $('#taskTreeView').append(`
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button ${index === -1 ? '' : 'collapsed'}" 
+                                                type="button" 
+                                                data-bs-toggle="collapse" 
+                                                data-bs-target="#${accordionId}">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-user me-2"></i>
+                                                <span>${user.firstName} ${user.lastName}</span>
+                                                <span class="badge bg-primary rounded-pill ms-2">${tasks.length}</span>
+                                            </div>
+                                        </button>
+                                    </h2>
+                                    <div id="${accordionId}" 
+                                         class="accordion-collapse collapse ${index === -1 ? 'show' : ''}"
+                                         data-bs-parent="#taskTreeView">
+                                        <div class="accordion-body p-0">
+                                            <div class="list-group list-group-flush">
+                                                ${tasks.map(task => `
+                                                    <div class="list-group-item">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <div>
+                                                                <h6 class="mb-2">${task.title}</h6>
+                                                                <p class="text-muted small mb-2">${task.description || 'No description'}</p>
+                                                                <div class="small">
+                                                                    <span class="me-3">
+                                                                        <i class="fas fa-calendar me-1"></i>
+                                                                        ${new Date(task.startDate).toLocaleDateString()}
+                                                                        ${task.endDate ? ' - ' + new Date(task.endDate).toLocaleDateString() : ''}
+                                                                    </span>
+                                                                    <span class="me-3">
+                                                                        <i class="fas fa-clock me-1"></i>
+                                                                        ${task.estimatedDays || 0} days
+                                                                    </span>
+                                                                    <span class="badge ${getStatusClass(task.status)}">${task.status}</span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="btn-group btn-group-sm">
+                                                                <button class="btn btn-outline-primary btn-edit" data-id="${task.taskId}">
+                                                                    <i class="fas fa-edit"></i>
+                                                                </button>
+                                                                <button class="btn btn-outline-danger btn-delete" data-id="${task.taskId}" data-title="${task.title}" data-userid="${task.user.userId}">
+                                                                    <i class="fas fa-trash"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                `).join('')}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `);
+                        });
+                    } else {
+                        $('#taskTreeView').html(`
+                            <div class="text-center p-4 text-muted">
+                                <i class="fas fa-tasks fa-2x mb-3"></i>
+                                <p class="mb-0">No tasks found</p>
+                            </div>
+                        `);
+                    }
+                },
+                error: function (error) {
+                    $('#alert').removeClass().addClass('alert alert-danger')
+                        .text('Error loading task data: ' + error.statusText);
+                }
+            });
+        }
+
+        // function to search tasks
+        function searchTasks(query) {
+            $("#btnSearch").prop("disabled", true).html(`<i class="fas fa-search me-2"></i>Searching...`);
+
+            $.ajax({
+                url: `${baseUrl}task/search/${query}`,
+                type: 'GET',
+                dataType: 'json',
+                success: function (response) {
+                    $('#taskTreeView').empty();
+                    
+                    if (response.data) {
+                        // Group tasks by user
+                        const tasksByUser = {};
+                        response.data.forEach(task => {
+                            if (!tasksByUser[task.user.userId]) {
+                                tasksByUser[task.user.userId] = {
+                                    user: task.user,
+                                    tasks: []
+                                };
+                            }
+                            tasksByUser[task.user.userId].tasks.push(task);
+                        });
+
+                        console.log(tasksByUser);
+
+                        // Render grouped tasks
+                        Object.values(tasksByUser).forEach((group, index) => {
+                            const user = group.user;
+                            const tasks = group.tasks;
+                            const accordionId = `accordion-${user.userId}`;
+                            
+                            $('#taskTreeView').append(`
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button ${index === 0 ? '' : 'collapsed'}" 
+                                                type="button" 
+                                                data-bs-toggle="collapse" 
+                                                data-bs-target="#${accordionId}">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-user me-2"></i>
+                                                <span>${user.firstName} ${user.lastName}</span>
+                                                <span class="badge bg-primary rounded-pill ms-2">${tasks.length}</span>
+                                            </div>
+                                        </button>
+                                    </h2>
+                                    <div id="${accordionId}" 
+                                         class="accordion-collapse collapse ${index === 0 ? 'show' : ''}"
+                                         data-bs-parent="#taskTreeView">
+                                        <div class="accordion-body p-0">
+                                            <div class="list-group list-group-flush">
+                                                ${tasks.map(task => `
+                                                    <div class="list-group-item">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <div>
+                                                                <h6 class="mb-2">${task.title}</h6>
+                                                                <p class="text-muted small mb-2">${task.description || 'No description'}</p>
+                                                                <div class="small">
+                                                                    <span class="me-3">
+                                                                        <i class="fas fa-calendar me-1"></i>
+                                                                        ${new Date(task.startDate).toDateString()}
+                                                                        ${task.endDate ? ' - ' + new Date(task.endDate).toDateString() : ''}
+                                                                    </span>
+                                                                    <span class="me-3">
+                                                                        <i class="fas fa-clock me-1"></i>
+                                                                        ${task.estimatedDays || 0} days
+                                                                    </span>
+                                                                    <span class="badge ${getStatusClass(task.status)}">${task.status}</span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="btn-group btn-group-sm">
+                                                                <button class="btn btn-outline-primary btn-edit" data-id="${task.taskId}">
+                                                                    <i class="fas fa-edit"></i>
+                                                                </button>
+                                                                <button class="btn btn-outline-danger btn-delete" data-id="${task.taskId}" data-title="${task.title}" data-userid="${task.user.userId}">
+                                                                    <i class="fas fa-trash"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                `).join('')}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `);
+                        });
+                    } else {
+                        $('#taskTreeView').html(`
+                            <div class="text-center p-4 text-muted">
+                                <i class="fas fa-tasks fa-2x mb-3"></i>
+                                <p class="mb-0">No tasks found</p>
+                            </div>
+                        `);
+                    }
+
+                    $("#btnSearch").prop("disabled", false).html(`<i class="fas fa-search me-2"></i>Search`);
+                },
+                error: function (xhr) {
+                    $("#btnSearch").prop("disabled", false).html(`<i class="fas fa-search me-2"></i>Search`);
+
+                    $('#alert').removeClass().addClass('alert alert-danger')
+                        .text(xhr.responseJSON.message).show();
+                    setTimeout(function() {
+                        $('#alert').hide();
+                    }, 2000);
+                }
+            });
+        }
+
+        function getStatusClass(status) {
+            switch (status.toLowerCase()) {
+                case 'pending':
+                    return 'bg-warning';
+                case 'in progress':
+                    return 'bg-primary';
+                case 'completed':
+                    return 'bg-success';
+                case 'cancelled':
+                    return 'bg-danger';
+                default:
+                    return 'bg-secondary';
+            }
+        }
+
+        function setDates() {
+            var today = new Date(); // Get today's date
+            var formattedDate = today.toISOString().slice(0, 10);
+            $('#startDate').val(formattedDate);
+            $('#endDate').val(formattedDate);
+        }
+
+        // Calculate and Set Estimated Days
+        function calculateEstimatedDays() {
+            let taskStartDate = $('#startDate').val();
+            let taskEndDate = $('#endDate').val();
+
+            if (taskStartDate && taskEndDate) {
+                let startDate = new Date(taskStartDate);
+                let endDate = new Date(taskEndDate);
+
+                if (startDate > endDate) {
+                    $('#alert').removeClass().addClass('alert alert-danger')
+                        .text("End date cannot be before the start date!").show();
+                    setTimeout(function() {
+                        $('#alert').hide();
+                    }, 2000);
+                    $('#endDate').val('');
+                    $("#estimatedDays").val('');
+                    return;
+                }
+
+                // Calculate difference in days
+                let timeDifference = endDate.getTime() - startDate.getTime();
+                let daysDifference = Math.ceil(timeDifference / (1000 * 3600 * 24)); // Convert to days
+
+                $("#estimatedDays").val(daysDifference);
+            } else {
+                $("#estimatedDays").val('');
+            }
+        }
+
+        // Function to save/update task
+        function saveTask() {
+            const taskId = $('#btnSaveTask').data('id');
+            const method = taskId ? 'PUT' : 'POST';
+            
+            // Create a task object that matches your API's expected format
+            const taskData = {
+                taskId: taskId || null,
+                userId: $('#userId').val(),
+                title: $('#title').val().trim(),
+                description: $('#description').val().trim() || null,
+                estimatedDays: parseInt($('#estimatedDays').val()) || null,
+                startDate: $('#startDate').val(),
+                endDate: $('#endDate').val() || null,
+                status: $('#status').val()
+            };
+
+            // Validate required fields
+            if (!taskData.userId) {
+                $('#userId').addClass('is-invalid');
+                $('#alert').removeClass().addClass('alert alert-danger')
+                    .text('Please select an employee');
+                return;
+            } else {
+                $('#userId').removeClass('is-invalid');
+            }
+
+            // Validate dates
+            if (taskData.endDate && taskData.startDate > taskData.endDate) {
+                $('#endDate').addClass('is-invalid');
+                $('#alert').removeClass().addClass('alert alert-danger')
+                    .text('End date cannot be earlier than start date');
+                return;
+            } else {
+                $('#endDate').removeClass('is-invalid');
+            }
+
+            $.ajax({
+                url: `${baseUrl}/task`,
+                type: method,
+                contentType: 'application/json',
+                data: JSON.stringify(taskData),
+                success: function(response) {
+                    const fullName = `${user.firstName} ${user.lastName}`;
+                    //
+                    sendUserNotification(
+                        taskData.userId,
+                        method == "POST" ? "New Task Assigned" : "Task Updated",
+                        method == "POST" ? `${fullName} assigned you a new task: ${taskData.title}.` : `${fullName} updated your task: ${taskData.title}.`,
+                        "task"
+                    ).finally(() => {
+                        // Show success message regardless of notification status
+                        Swal.fire({
+                            title: method == "POST" ? "New Task Added" : "Task Updated",
+                            icon: "success",
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                        $('#taskModal').modal('hide');
+                        loadTaskData();
+                        $('#taskForm').removeClass('was-validated');
+                    });
+                },
+                error: function(error) {
+                    console.error('Error saving task:', error);
+                    let errorMessage = taskId ? 'Error updating task' : 'Error adding task';
+                    if (error.responseJSON && error.responseJSON.errors) {
+                        errorMessage += ': ' + Object.values(error.responseJSON.errors).flat().join(', ');
+                    }
+                    $('#alert').removeClass().addClass('alert alert-danger')
+                        .text(errorMessage);
+                }
+            });
+        }
+
+        // DOCUMENT READY FUNCTION ========
+
+        $(document).ready(function () {
+            loadTaskData();
+
+            $('#btnAdd').on('click', function() {
+                $('#taskForm')[0].reset();
+                $('#taskModal').modal('show');
+                loadEmployees(); // Load employees when modal opens
+                $('#taskModalLabel').text('Add New Task');
+                $('#btnSaveTask').text('Save Task').data('id', '');
+            });
+
+            // Add form validation
+            $('#taskForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                // Clear previous validation states
+                $(this).find('.is-invalid').removeClass('is-invalid');
+                
+                // Validate title explicitly
+                const title = $('#title').val().trim();
+                if (!title) {
+                    $('#title').addClass('is-invalid');
+                    $('#alert').removeClass().addClass('alert alert-danger')
+                        .text('Please enter a title');
+                    return;
+                }
+
+                if (this.checkValidity()) {
+                    saveTask();
+                }
+                $(this).addClass('was-validated');
+            });
+
+            // Update save button to trigger form submission
+            $('#btnSaveTask').on('click', function() {
+                $('#taskForm').submit();
+            });
+
+            // Edit Task
+            $(document).on('click', '.btn-edit', function() {
+                const taskId = $(this).data('id');
+                $.ajax({
+                    url: `${baseUrl}/task/${taskId}`,
+                    type: 'GET',
+                    success: function(response) {
+                        if (response.data) {
+                            const task = response.data;
+                            loadEmployees(); // Load employees first
+                            
+                            // Set a slight delay to ensure dropdown is populated
+                            setTimeout(() => {
+                                $('#userId').val(task.userId);
+                                $('#title').val(task.title);
+                                $('#description').val(task.description);
+                                $('#estimatedDays').val(task.estimatedDays);
+                                $('#startDate').val(task.startDate.split('T')[0]);
+                                $('#endDate').val(task.endDate ? task.endDate.split('T')[0] : '');
+                                $('#status').val(task.status);
+                                
+                                $('#taskModalLabel').text('Edit Task');
+                                $('#btnSaveTask').text('Update Task').data('id', taskId);
+                                $('#taskModal').modal('show');
+                            }, 300);
+                        }
+                    },
+                    error: function(error) {
+                        console.error('Error loading task:', error);
+                        $('#alert').removeClass().addClass('alert alert-danger')
+                            .text('Error loading task data');
+                    }
+                });
+            });
+
+            // Delete Task
+            $(document).on('click', '.btn-delete', function() {
+                const taskId = $(this).data('id');
+                const taskTitle = $(this).data('title');
+                const taskUserId = $(this).data('userid');
+
+                Swal.fire({
+                    title: "Are you sure you want to delete this task?",
+                    text: taskTitle,
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#133E87",
+                    cancelButtonColor: "#d33",
+                    confirmButtonText: "Yes, delete it!"
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: `${baseUrl}/task/${taskId}`,
+                            type: 'DELETE',
+                            success: function(response) {
+                                const fullName = `${user.firstName} ${user.lastName}`;
+                                //
+                                sendUserNotification(
+                                    taskUserId,
+                                    "Task Deleted",
+                                    `${fullName} deleted your task: ${taskTitle}.`,
+                                ).finally(() => {
+                                    Swal.fire({
+                                        title: "Task Deleted",
+                                        icon: "success",
+                                        timer: 2000,
+                                        showConfirmButton: false
+                                    });
+                                    loadTaskData();
+                                });
+                            },
+                            error: function(error) {
+                                console.error('Error deleting task:', error);
+                                $('#alert').removeClass().addClass('alert alert-danger')
+                                    .text('Error deleting task').show();
+                                setTimeout(function() {
+                                    $('#alert').hide();
+                                }, 2000);
+                            }
+                        });
+                    }
+                });
+            });
+
+            // Event Listeners for Start and End Date Changes
+            $('#startDate, #endDate').on('change', function () {
+                calculateEstimatedDays();
+            });
+
+            $('#searchForm').on('submit', function(e) {
+                e.preventDefault();
+                searchTasks($("#txtSearch").val());
+            });
+        });
+   </script>
+}

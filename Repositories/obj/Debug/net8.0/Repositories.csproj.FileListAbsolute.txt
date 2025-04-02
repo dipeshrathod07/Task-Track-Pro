@@ -1,0 +1,12 @@
+D:\ZExam\TaskTrackPro-main\Repositories\bin\Debug\net8.0\Repositories.deps.json
+D:\ZExam\TaskTrackPro-main\Repositories\bin\Debug\net8.0\Repositories.dll
+D:\ZExam\TaskTrackPro-main\Repositories\bin\Debug\net8.0\Repositories.pdb
+D:\ZExam\TaskTrackPro-main\Repositories\obj\Debug\net8.0\Repositories.csproj.AssemblyReference.cache
+D:\ZExam\TaskTrackPro-main\Repositories\obj\Debug\net8.0\Repositories.GeneratedMSBuildEditorConfig.editorconfig
+D:\ZExam\TaskTrackPro-main\Repositories\obj\Debug\net8.0\Repositories.AssemblyInfoInputs.cache
+D:\ZExam\TaskTrackPro-main\Repositories\obj\Debug\net8.0\Repositories.AssemblyInfo.cs
+D:\ZExam\TaskTrackPro-main\Repositories\obj\Debug\net8.0\Repositories.csproj.CoreCompileInputs.cache
+D:\ZExam\TaskTrackPro-main\Repositories\obj\Debug\net8.0\Repositories.dll
+D:\ZExam\TaskTrackPro-main\Repositories\obj\Debug\net8.0\refint\Repositories.dll
+D:\ZExam\TaskTrackPro-main\Repositories\obj\Debug\net8.0\Repositories.pdb
+D:\ZExam\TaskTrackPro-main\Repositories\obj\Debug\net8.0\ref\Repositories.dll

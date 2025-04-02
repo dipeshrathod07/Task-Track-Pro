@@ -1,0 +1,158 @@
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  margin-bottom: 60px;
+}
+
+/* Notifications */
+
+.notification-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    padding: 10px 15px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.notification-item:hover {
+    background-color: #f8f9fa;
+}
+
+.notification-item.unread {
+    background-color: #f0f7ff;
+}
+
+.notification-item .notification-title {
+    font-weight: 600;
+    margin-bottom: 3px;
+}
+
+.notification-item .notification-desc {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 3px;
+}
+
+.notification-item .notification-time {
+    font-size: 0.75rem;
+    color: #999;
+}
+
+.notification-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+.notification-icon.task {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+
+.notification-icon.message {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+.notification-icon.alert {
+    background-color: #fff3e0;
+    color: #f57c00;
+}
+
+/* Chat Messages */
+
+.message-list {
+    max-height: 350px;
+    overflow-y: auto;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+}
+
+.message-list::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+
+.message-item {
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+    transition: background-color 0.3s;
+}
+
+.message-item:hover {
+    background-color: #f8f9fa;
+}
+
+.message-item.unread {
+    background-color: #f0f7ff;
+}
+
+.message-sender {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #2c3e50;
+    margin-bottom: 4px;
+}
+
+.message-preview {
+    font-size: 0.85rem;
+    color: #666;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.4;
+    margin-bottom: 4px;
+}
+
+.message-time {
+    font-size: 0.75rem;
+    color: #999;
+}
+
+.mark-read-btn {
+    padding: 4px 8px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    background: transparent;
+    border: none;
+}
+
+.mark-read-btn:hover {
+    color: #0056b3 !important;
+    background-color: #e9ecef;
+    border-radius: 4px;
+}
+
+.message-item:hover .mark-read-btn {
+    opacity: 1;
+}
+
+.message-item .flex-grow-1 {
+    cursor: pointer;
+}

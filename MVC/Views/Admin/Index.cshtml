@@ -1,0 +1,280 @@
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom Style -->
+    <style>
+        :root {
+            --primary-color: #133E87;
+            --secondary-color: #608BC1;
+            --background-color: #F3F3E0;
+            --text-color: #333;
+        }
+
+        body {
+            background-color: var(--background-color);
+            font-family: 'Poppins', sans-serif;
+            color: var(--text-color);
+        }
+
+        /* Dashboard Header with Gradient */
+        .dashboard-header {
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 30px 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .dashboard-header img {
+            max-width: 250px;
+            /* Bigger Logo */
+            margin-bottom: 15px;
+        }
+
+        .dashboard-header h2 {
+            font-size: 2.5rem;
+            /* Larger Heading */
+            font-weight: bold;
+        }
+
+        /* White Cards */
+        .card {
+            border: none;
+            border-radius: 15px;
+            background: white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .card i {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+
+        .chart-container {
+            width: 100%;
+            height: 300px;
+            padding: 20px;
+        }
+
+        .opacity-50 {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .alert {
+            margin-top: -20px;
+            margin-bottom: 20px;
+        }
+
+        .spinner-border-sm {
+            width: 1.5rem;
+            height: 1.5rem;
+        }
+    </style>
+}
+
+<!-- Dashboard Header with Logo -->
+<div class="dashboard-header">
+    <img src="/Images/Logo2.png" alt="Task Management" class="img-fluid">
+    <h2 id="greeting">Welcome, User! 👋</h2>
+    <p>Manage your tasks efficiently and stay productive!</p>
+</div>
+
+<!-- Cards Section -->
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card">
+            <i class="fa-solid fa-tasks"></i>
+            <h5 class="card-title">Total Tasks</h5>
+            <p class="fs-4 total_task">...</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <i class="fa-solid fa-check-circle"></i>
+            <h5 class="card-title">Completed</h5>
+            <p class="fs-4 completed_task">...</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <i class="fa-solid fa-clock"></i>
+            <h5 class="card-title">Pending</h5>
+            <p class="fs-4 pending_task">...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Task Progress Chart -->
+<div class="row mt-4">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <h5 class="text-center">Task Progress Overview</h5>
+            <div class="chart-container">
+                <canvas id="taskChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+ 
+@section Scripts {
+    <script>
+        const DashboardModule = {
+            init() {
+                this.TasksList = [];
+                this.user = JSON.parse(sessionStorage.getItem("user"));
+                this.baseUrl = "http://localhost:5267/api";
+                this.initializeUI();
+                this.loadDashboardData();
+            },
+
+            initializeUI() {
+                // Set welcome message
+                $('#greeting').text(`Welcome, ${this.user.firstName} ${this.user.lastName} 👋`);
+                
+                // Initialize loading states
+                $('.total_task, .completed_task, .pending_task').html(
+                    '<div class="spinner-border spinner-border-sm text-primary" role="status">' +
+                    '<span class="visually-hidden">Loading...</span></div>'
+                );
+            },
+
+            loadDashboardData() {
+                $.ajax({
+                    url: `${this.baseUrl}/task`,
+                    type: "GET",
+                    beforeSend: () => {
+                        // Show loading state for chart
+                        $('.chart-container').addClass('opacity-50');
+                    },
+                    success: (response) => {
+                        console.log("Dashboard data loaded:", response);
+                        this.TasksList = response.data;
+                        this.updateDashboardMetrics();
+                    },
+                    error: (xhr) => {
+                        console.error("Error loading dashboard data:", xhr);
+                        this.handleError("Failed to load dashboard data");
+                    },
+                    complete: () => {
+                        $('.chart-container').removeClass('opacity-50');
+                    }
+                });
+            },
+
+            updateDashboardMetrics() {
+                const metrics = this.calculateMetrics();
+                
+                // Update UI with animations
+                $('.total_task').fadeOut(200, function() {
+                    $(this).text(metrics.total).fadeIn(200);
+                });
+                
+                $('.completed_task').fadeOut(200, function() {
+                    $(this).text(metrics.completed).fadeIn(200);
+                });
+                
+                $('.pending_task').fadeOut(200, function() {
+                    $(this).text(metrics.pending).fadeIn(200);
+                });
+
+                this.loadChart(metrics.completed, metrics.pending);
+            },
+
+            calculateMetrics() {
+                return {
+                    total: this.TasksList.length,
+                    completed: this.TasksList.filter(task => task.status === "Completed").length,
+                    pending: this.TasksList.filter(task => task.status === "Pending").length
+                };
+            },
+
+            loadChart(completedTask, pendingTask) {
+                const ctx = document.getElementById('taskChart').getContext('2d');
+                
+                // Destroy existing chart if it exists
+                if (window.taskChart instanceof Chart) {
+                    window.taskChart.destroy();
+                }
+
+                window.taskChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Completed', 'Pending'],
+                        datasets: [{
+                            data: [completedTask, pendingTask],
+                            backgroundColor: ['#133E87', '#608BC1'],
+                            hoverOffset: 5,
+                            borderWidth: 2,
+                            borderColor: '#fff',
+                            hoverBorderWidth: 3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { font: { size: 14 } }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: (context) => {
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = Math.round((context.raw / total) * 100);
+                                        return `${context.label}: ${context.raw} (${percentage}%)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            },
+
+            handleError(message) {
+                // Add error alerts to the page
+                const errorHtml = `
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        ${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>`;
+                
+                $('.dashboard-header').after(errorHtml);
+                
+                // Show placeholder values
+                $('.total_task, .completed_task, .pending_task').text('--');
+                
+                // Show empty chart
+                this.loadChart(0, 0);
+            }
+        };
+
+        // Initialize dashboard when document is ready
+        $(document).ready(() => {
+            try {
+                DashboardModule.init();
+            } catch (error) {
+                console.error("Dashboard initialization failed:", error);
+                DashboardModule.handleError("Failed to initialize dashboard");
+            }
+        });
+    </script>
+}

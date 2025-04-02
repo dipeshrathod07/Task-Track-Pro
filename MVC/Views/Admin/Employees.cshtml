@@ -1,0 +1,80 @@
+@{
+    ViewData["Title"] = "Users";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@using Repositories.Models;
+@model IEnumerable<User>
+
+<div class="container mt-4">
+    @if (TempData["Message"] != null)
+    {
+        <div class="alert alert-primary alert-dismissible fade show" role="alert">
+            @TempData["Message"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    <table class="table table-striped" id="employeeTable">
+        <thead class="thead-dark">
+            <tr>
+                <th>Profile</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Delete</th>
+                <th>Edit</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- This will be filled dynamically -->
+        </tbody>
+    </table>
+
+    <div class="mt-4">
+        <a href="">Add User</a>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const baseUrl = "http://localhost:5267/api/user";
+        
+        // ========
+        
+        function loadEmployeesData() {
+            $.ajax({
+                url: baseUrl,
+                method: "GET",
+                success: function(response, status, xhr) {
+                    let userArray = response.data;
+                    $.each(userArray, function(index, user) {
+                        $('#employeeTable').body.append(`
+                            <tr style="vertical-align: middle;">
+                                <td>
+                                    <img id="image" src="/profile_images/${user.image}" 
+                                        onerror="this.src='/profile_images/placeholder.jpg'"
+                                        width="50px" height="50px" class="rounded-circle img-thumbnail" />
+                                </td>
+                                <td>${user.firstName} ${user.lastName}</td>
+                                <td>${user.email}</td>
+                                <td>
+                                    <button data-id="${user.userId}" class="btn btn-sm btn-danger">Delete</button>
+                                </td>
+                                <td>
+                                    <button data-id="${user.userId}" class="btn btn-sm btn-primary">Edit</button>
+                                </td>
+                            </tr>
+                        `);
+                    });
+                },
+                error: function(xhr, status, error) {
+                    console.log(status, xhr);
+                }
+            });
+
+            // ========
+
+            $(document).ready(function() {
+                loadEmployeesData();
+            });
+        }
+    </script>
+}
