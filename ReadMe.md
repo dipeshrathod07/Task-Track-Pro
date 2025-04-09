@@ -53,5 +53,3 @@ TaskTrackPro is an advanced task management system that facilitates seamless col
 - Integrate Elasticsearch for fast, full-text task search.
 - Add advanced filters for tasks based on various criteria.
 
-## Project Structure
-
